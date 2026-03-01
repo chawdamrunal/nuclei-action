@@ -17,23 +17,20 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Nuclei scan on ing.txt domains
-        uses: ./
-        id: nuclei
+        uses: projectdiscovery/nuclei-action@v3
         with:
-          args: "-l ing.txt -severity critical,high,medium -stats -ni -o nuclei-output.txt -j -me nuclei-output"
+          args: "-l ing.txt -severity critical,high,medium -stats -ni -o nuclei-output.txt -me nuclei-output"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print scan results
         if: always()
-        env:
-          NUCLEI_STDOUT: ${{ steps.nuclei.outputs.stdout }}
-          NUCLEI_STDERR: ${{ steps.nuclei.outputs.stderr }}
         run: |
-          echo "::group::Nuclei stdout"
-          printf '%s\n' "$NUCLEI_STDOUT"
-          echo "::endgroup::"
-          echo "::group::Nuclei stderr"
-          printf '%s\n' "$NUCLEI_STDERR"
+          echo "::group::Nuclei findings"
+          if [ -f nuclei-output.txt ]; then
+            cat nuclei-output.txt
+          else
+            echo "No output file found"
+          fi
           echo "::endgroup::"
 
       - name: Upload results as artifact
