@@ -20,7 +20,7 @@ jobs:
         uses: ./
         id: nuclei
         with:
-          args: "-l ing.txt -severity critical,high,medium -stats"
+          args: "-l ing.txt -severity critical,high,medium -stats -ni -o nuclei-output.txt -j -me nuclei-output"
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print scan results
@@ -39,6 +39,7 @@ jobs:
         with:
           name: nuclei-scan-results
           path: |
-            nuclei-output.*
+            nuclei-output.txt
+            nuclei-output/
           if-no-files-found: ignore
           retention-days: 30
