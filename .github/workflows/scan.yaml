@@ -1,0 +1,44 @@
+name: Nuclei Domain Scan
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ing.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Nuclei scan on ing.txt domains
+        uses: ./
+        id: nuclei
+        with:
+          args: "-l ing.txt -severity critical,high,medium -stats"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print scan results
+        if: always()
+        run: |
+          echo "::group::Nuclei stdout"
+          echo "${{ steps.nuclei.outputs.stdout }}"
+          echo "::endgroup::"
+          echo "::group::Nuclei stderr"
+          echo "${{ steps.nuclei.outputs.stderr }}"
+          echo "::endgroup::"
+
+      - name: Upload results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuclei-scan-results
+          path: |
+            nuclei-output.*
+          if-no-files-found: ignore
+          retention-days: 30
