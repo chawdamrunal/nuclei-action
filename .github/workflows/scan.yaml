@@ -10,36 +10,96 @@ permissions:
   contents: read
 
 jobs:
-  scan:
+  scan-critical-high:
     runs-on: ubuntu-latest
+    timeout-minutes: 300
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Nuclei scan on ing.txt domains
+      - name: Run Nuclei scan (critical + high)
         uses: projectdiscovery/nuclei-action@v3
         with:
-          args: "-l ing.txt -severity critical,high,medium -stats -ni -o nuclei-output.txt -me nuclei-output"
+          args: >-
+            -l ing.txt
+            -severity critical,high
+            -rl 150
+            -c 40
+            -bulk-size 25
+            -timeout 5
+            -retries 1
+            -exclude-tags dos,fuzz,intrusive,brute-force,slow
+            -stats
+            -ni
+            -o nuclei-critical-high.txt
+            -me nuclei-critical-high
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Print scan results
+      - name: Print critical/high results
         if: always()
         run: |
-          echo "::group::Nuclei findings"
-          if [ -f nuclei-output.txt ]; then
-            cat nuclei-output.txt
+          echo "::group::Critical + High findings"
+          if [ -f nuclei-critical-high.txt ]; then
+            cat nuclei-critical-high.txt
           else
-            echo "No output file found"
+            echo "No findings"
           fi
           echo "::endgroup::"
 
-      - name: Upload results as artifact
+      - name: Upload critical/high results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nuclei-scan-results
+          name: nuclei-critical-high
           path: |
-            nuclei-output.txt
-            nuclei-output/
+            nuclei-critical-high.txt
+            nuclei-critical-high/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  scan-medium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Nuclei scan (medium)
+        uses: projectdiscovery/nuclei-action@v3
+        with:
+          args: >-
+            -l ing.txt
+            -severity medium
+            -rl 100
+            -c 25
+            -bulk-size 25
+            -timeout 5
+            -retries 1
+            -exclude-tags dos,fuzz,intrusive,brute-force,slow
+            -stats
+            -ni
+            -o nuclei-medium.txt
+            -me nuclei-medium
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print medium results
+        if: always()
+        run: |
+          echo "::group::Medium findings"
+          if [ -f nuclei-medium.txt ]; then
+            cat nuclei-medium.txt
+          else
+            echo "No findings"
+          fi
+          echo "::endgroup::"
+
+      - name: Upload medium results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuclei-medium
+          path: |
+            nuclei-medium.txt
+            nuclei-medium/
           if-no-files-found: ignore
           retention-days: 30
